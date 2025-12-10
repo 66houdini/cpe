@@ -1,28 +1,32 @@
-"""
-Database initialization and seeding script
-
-Run this to setup the database with initial data
-"""
-
 from backend.app import create_app, db
-from backend.models.scenario import Scenario, ModelAssumption
+from backend.models.scenario import Scenario, ScenarioComparison, ModelAssumption
 import os
 
 
-def init_db():
-    """Initialize database"""
+def init_db_tables():
+    """Initialize database tables if they don't exist"""
     app = create_app(os.getenv('FLASK_ENV', 'development'))
     
     with app.app_context():
         # Create all tables
         db.create_all()
-        print("✓ Database tables created")
+        print("✓ Database tables checked/created")
+
+
+def seed_data_if_needed():
+    """Seed database only if it's empty"""
+    app = create_app(os.getenv('FLASK_ENV', 'development'))
+    
+    with app.app_context():
+        # Check if data already exists
+        if ModelAssumption.query.first() is not None:
+            print("✓ Database already has data, skipping seed")
+            return
         
-        # Seed with initial data
+        print("Seeding database with initial data...")
         seed_assumptions()
         seed_example_scenarios()
-        
-        print("✓ Database initialized successfully!")
+        print("✓ Database seeded successfully!")
 
 
 def seed_assumptions():
@@ -87,17 +91,11 @@ def seed_assumptions():
     ]
     
     for assumption_data in assumptions:
-        # Check if exists
-        existing = ModelAssumption.query.filter_by(
-            name=assumption_data['name']
-        ).first()
-        
-        if not existing:
-            assumption = ModelAssumption(**assumption_data)
-            db.session.add(assumption)
+        assumption = ModelAssumption(**assumption_data)
+        db.session.add(assumption)
     
     db.session.commit()
-    print(f"✓ Seeded {len(assumptions)} model assumptions")
+    print(f"  ✓ Seeded {len(assumptions)} model assumptions")
 
 
 def seed_example_scenarios():
@@ -140,23 +138,26 @@ def seed_example_scenarios():
     model_service = ModelService()
     
     for scenario_data in example_scenarios:
-        # Check if exists
-        existing = Scenario.query.filter_by(name=scenario_data['name']).first()
+        # Calculate results
+        results = model_service.calculate_impacts(scenario_data['parameters'])
         
-        if not existing:
-            # Calculate results
-            results = model_service.calculate_impacts(scenario_data['parameters'])
-            
-            scenario = Scenario(
-                name=scenario_data['name'],
-                description=scenario_data['description'],
-                parameters=scenario_data['parameters'],
-                results=results
-            )
-            db.session.add(scenario)
+        scenario = Scenario(
+            name=scenario_data['name'],
+            description=scenario_data['description'],
+            parameters=scenario_data['parameters'],
+            results=results
+        )
+        db.session.add(scenario)
     
     db.session.commit()
-    print(f"✓ Seeded {len(example_scenarios)} example scenarios")
+    print(f"  ✓ Seeded {len(example_scenarios)} example scenarios")
+
+
+# For manual initialization
+def init_db():
+    """Complete database initialization (manual use)"""
+    init_db_tables()
+    seed_data_if_needed()
 
 
 if __name__ == '__main__':
