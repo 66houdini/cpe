@@ -1,0 +1,26 @@
+services:
+  # Flask Backend API
+  - type: web
+    name: nexus-platform-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -w 4 -b 0.0.0.0:$PORT run:app
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CACHE_TYPE
+        value: simple
+      - key: MC_SIMULATIONS
+        value: 100
+
+databases:
+  # PostgreSQL Database
+  - name: nexus-platform-db
+    databaseName: nexus_platform
+    user: nexus_user
+# Redis is available as a separate add-on
+# You can add it via the Render dashboard
