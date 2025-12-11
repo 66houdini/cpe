@@ -1,32 +1,46 @@
-from backend.app import create_app, db
+from backend.app import db
 from backend.models.scenario import Scenario, ScenarioComparison, ModelAssumption
 import os
 
+# Flag to track if initialization has been done in this process
+_initialized = False
 
-def init_db_tables():
+
+def init_db_tables(app):
     """Initialize database tables if they don't exist"""
-    app = create_app(os.getenv('FLASK_ENV', 'development'))
-    
     with app.app_context():
-        # Create all tables
         db.create_all()
         print("✓ Database tables checked/created")
 
 
-def seed_data_if_needed():
-    """Seed database only if it's empty"""
-    app = create_app(os.getenv('FLASK_ENV', 'development'))
+def seed_data_if_needed(app):
+    """Seed database only if it's empty - with proper check"""
+    global _initialized
+    
+    # Skip if already initialized in this process
+    if _initialized:
+        print("✓ Already initialized in this process, skipping")
+        return
     
     with app.app_context():
         # Check if data already exists
-        if ModelAssumption.query.first() is not None:
-            print("✓ Database already has data, skipping seed")
+        existing_count = ModelAssumption.query.count()
+        if existing_count > 0:
+            print(f"✓ Database already has {existing_count} assumptions, skipping seed")
+            _initialized = True
             return
         
         print("Seeding database with initial data...")
-        seed_assumptions()
-        seed_example_scenarios()
-        print("✓ Database seeded successfully!")
+        try:
+            seed_assumptions()
+            seed_example_scenarios()
+            db.session.commit()
+            print("✓ Database seeded successfully!")
+            _initialized = True
+        except Exception as e:
+            db.session.rollback()
+            print(f"Warning: Seeding failed (may already exist): {e}")
+            _initialized = True
 
 
 def seed_assumptions():
@@ -94,8 +108,7 @@ def seed_assumptions():
         assumption = ModelAssumption(**assumption_data)
         db.session.add(assumption)
     
-    db.session.commit()
-    print(f"  ✓ Seeded {len(assumptions)} model assumptions")
+    print(f"  ✓ Added {len(assumptions)} model assumptions")
 
 
 def seed_example_scenarios():
@@ -138,9 +151,7 @@ def seed_example_scenarios():
     model_service = ModelService()
     
     for scenario_data in example_scenarios:
-        # Calculate results
         results = model_service.calculate_impacts(scenario_data['parameters'])
-        
         scenario = Scenario(
             name=scenario_data['name'],
             description=scenario_data['description'],
@@ -149,15 +160,16 @@ def seed_example_scenarios():
         )
         db.session.add(scenario)
     
-    db.session.commit()
-    print(f"  ✓ Seeded {len(example_scenarios)} example scenarios")
+    print(f"  ✓ Added {len(example_scenarios)} example scenarios")
 
 
-# For manual initialization
+# For manual initialization (command line)
 def init_db():
-    """Complete database initialization (manual use)"""
-    init_db_tables()
-    seed_data_if_needed()
+    """Complete database initialization (for manual use only)"""
+    from backend.app import create_app
+    app = create_app(os.getenv('FLASK_ENV', 'development'))
+    init_db_tables(app)
+    seed_data_if_needed(app)
 
 
 if __name__ == '__main__':

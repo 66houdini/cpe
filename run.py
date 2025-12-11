@@ -1,20 +1,15 @@
 from backend.app import create_app, db
 from backend.models.scenario import Scenario, ScenarioComparison, ModelAssumption
-from backend.init_db import init_db_tables, seed_data_if_needed
 
 # Create the Flask app
 app = create_app()
 
-# Auto-initialize database on startup
-with app.app_context():
-    try:
-        print("=== Database Initialization ===")
-        init_db_tables()
-        seed_data_if_needed()
-        print("=== Database Ready ===")
-    except Exception as e:
-        print(f"Warning: Database initialization issue: {e}")
-        print("Continuing anyway - tables may already exist")
+# Initialize database ONCE when the module is first loaded
+# The _initialized flag in init_db prevents duplicate seeding
+from backend.init_db import init_db_tables, seed_data_if_needed
+init_db_tables(app)
+seed_data_if_needed(app)
+print("=== App Ready ===")
 
 @app.shell_context_processor
 def make_shell_context():
