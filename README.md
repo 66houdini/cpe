@@ -1,5 +1,17 @@
 # Interactive Nexus Scenario Modeling Platform - Backend
 
+## 🚀 Production API
+
+**Live API URL**: https://cpe-2lfo.onrender.com
+
+**For Frontend Developers**: The API is deployed and ready for integration. All endpoints are accessible at the base URL above.
+
+**Quick Test**:
+
+```bash
+curl https://cpe-2lfo.onrender.com/api/models/info
+```
+
 ## Overview
 
 This is the Flask-based backend for the Interactive Nexus Scenario Modeling Platform, a tool for analyzing trade-offs and synergies across food, energy, and water systems.
@@ -129,10 +141,16 @@ cpe/
 
 ## API Usage Examples
 
+**Base URLs**:
+
+- Production: `https://cpe-2lfo.onrender.com`
+- Local: `http://localhost:5000`
+
 ### Create a Scenario
 
 ```bash
-curl -X POST http://localhost:5000/api/scenarios \
+# Production
+curl -X POST https://cpe-2lfo.onrender.com/api/scenarios \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Green Transition",
@@ -144,12 +162,17 @@ curl -X POST http://localhost:5000/api/scenarios \
       "population_growth": 1.01
     }
   }'
+
+# Local Development
+curl -X POST http://localhost:5000/api/scenarios \
+  -H "Content-Type: application/json" \
+  -d '{...}'
 ```
 
 ### Run Sensitivity Analysis
 
 ```bash
-curl -X POST http://localhost:5000/api/scenarios/1/sensitivity \
+curl -X POST https://cpe-2lfo.onrender.com/api/scenarios/1/sensitivity \
   -H "Content-Type: application/json" \
   -d '{
     "parameter": "renewable_energy_share"
@@ -159,7 +182,7 @@ curl -X POST http://localhost:5000/api/scenarios/1/sensitivity \
 ### Compare Scenarios
 
 ```bash
-curl -X POST http://localhost:5000/api/scenarios/compare \
+curl -X POST https://cpe-2lfo.onrender.com/api/scenarios/compare \
   -H "Content-Type: application/json" \
   -d '{
     "scenario_ids": [1, 2, 3]
@@ -170,10 +193,10 @@ curl -X POST http://localhost:5000/api/scenarios/compare \
 
 ```bash
 # CSV export
-curl http://localhost:5000/api/scenarios/1/export?format=csv > scenario.csv
+curl https://cpe-2lfo.onrender.com/api/scenarios/1/export?format=csv > scenario.csv
 
 # JSON export
-curl http://localhost:5000/api/scenarios/1/export?format=json > scenario.json
+curl https://cpe-2lfo.onrender.com/api/scenarios/1/export?format=json > scenario.json
 ```
 
 ## Model Parameters
